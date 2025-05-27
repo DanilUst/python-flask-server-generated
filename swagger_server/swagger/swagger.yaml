@@ -1,0 +1,125 @@
+openapi: 3.0.0
+info:
+  title: Cars Seller
+  description: Простое API для управления продажами машин
+  version: 1.0.0
+servers:
+- url: http://127.0.0.1:8080
+paths:
+  /seller:
+    get:
+      summary: Получить все машины
+      operationId: seller_controller_get_cars
+      responses:
+        "200":
+          description: Список машин
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/seller"
+                x-content-type: application/json
+      x-openapi-router-controller: swagger_server.controllers.seller_controller
+    post:
+      summary: Создать новую машину
+      operationId: seller_controller_create_car
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/seller"
+        required: true
+      responses:
+        "201":
+          description: Машина создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/seller"
+      x-openapi-router-controller: swagger_server.controllers.seller_controller
+  /seller/{car_id}:
+    get:
+      summary: Получить машину по ID
+      operationId: seller_controller_get_car
+      parameters:
+      - name: car_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Машина найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/seller"
+        "404":
+          description: Машина не найдена
+      x-openapi-router-controller: swagger_server.controllers.seller_controller
+    put:
+      summary: Обновить машину
+      operationId: seller_controller_update_car
+      parameters:
+      - name: car_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/seller"
+        required: true
+      responses:
+        "200":
+          description: Машина обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/seller"
+        "404":
+          description: Машина не найдена
+      x-openapi-router-controller: swagger_server.controllers.seller_controller
+    delete:
+      summary: Удалить машину
+      operationId: seller_controller_delete_car
+      parameters:
+      - name: car_id
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "204":
+          description: Машина удалена
+        "404":
+          description: Машина не найдена
+      x-openapi-router-controller: swagger_server.controllers.seller_controller
+components:
+  schemas:
+    seller:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        content:
+          type: string
+        price:
+          type: integer
+      example:
+        id: 0
+        name: title
+        content: content
+        price: 1
+

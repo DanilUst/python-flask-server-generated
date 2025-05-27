@@ -1,0 +1,21 @@
+connexion < 3.0.0
+connexion[swagger-ui] < 3.0.0
+python_dateutil == 2.6.0
+setuptools >= 21.0.0
+swagger-ui-bundle >= 0.0.2
+flask_sqlalchemy>=2.5.1
+SQLAlchemy>=1.3.0
+prometheus_client
+flask_prometheus_metrics
+python-logging-loki
+
+Flask
+six
+Werkzeug
+
+python-logging-loki
+pytz
+
+opentelemetry-sdk
+opentelemetry-exporter-otlp
+opentelemetry-instrumentation-flask

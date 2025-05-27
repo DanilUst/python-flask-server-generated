@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'flask-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['flask-api:8080']  # Имя сервиса в Docker сети

@@ -1,0 +1,86 @@
+services:
+  flask-api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+      - otel-collector
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+      - tempo
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki-data:/loki
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./logs:/var/log/python-app  # Та же директория, что и у flask-api
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+      
+  tempo:
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    ports:
+      - "3200:3200"     # Tempo HTTP API
+      - "4317:4317"     # gRPC OTLP
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+    networks:
+      - monitoring
+      
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4321:4321"  # Изменён порт с 4317 на 4321
+    depends_on:
+      - tempo
+    networks:
+      - monitoring
+
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana-storage:
+  loki-data:
