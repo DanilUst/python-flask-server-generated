@@ -19,7 +19,7 @@ def setup_logging(app):
     # Создаем директорию для логов, если её нет
     log_dir = '/var/log/flask-api'
     os.makedirs(log_dir, exist_ok=True)
-    
+
     # Формат логов (структурированный JSON)
     formatter = logging.Formatter(
         '{"time": "%(asctime)s", "level": "%(levelname)s", "module": "%(module)s", '
