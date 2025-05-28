@@ -82,7 +82,7 @@ def seller_controller_get_cars():
             ).observe(time.time() - start_time)
 
             logger.info(
-                f"{datetime.now()} Получена информация о машинах от польз {user}"
+                f"{datetime.now()} Получена инф-я о машинах от польз {user}"
             )
             return jsonify([car.to_dict() for car in cars]), 200
         except Exception as e:
