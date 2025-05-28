@@ -23,56 +23,47 @@ from swagger_server.tracer import tracer
 user = "admin@example.com"
 
 
-def seller_controller_create_car(body):
+def seller_controller_create_car(body):  # noqa: E501
     """Создать новую запись."""
     with tracer.start_as_current_span("create_car"):
         start_time = time.time()
-        
+
         if not connexion.request.is_json:
             return {"message": "Неверный формат запроса"}, 400
-            
+
         try:
             with tracer.start_as_current_span("parse_json_body"):
                 data = connexion.request.get_json()
 
-                with tracer.start_as_current_span("db_insert_car"):
-                    new_car = seller(
-                        name=data.get('name'),
-                        content=data.get('content'),
-                        price=data.get('price')
-                    )
-                    
-                    db.session.add(new_car)
-
-                with tracer.start_as_current_span("db_commit"):
-                    db.session.commit()
-                
-                # Определяем ценовой диапазон для метрики
-                price = data.get('price', 0)
-                price_range = f"{price//10000 * 10000}-{(price//10000 + 1) * 10000}"
-                
-                CARS_ADDED_TOTAL.inc()
-                CARS_ADDED_DETAILED.labels(car_model=data.get('name')).inc()
-                logger.info(
-                    str(datetime.now()) + " Машина создана" +
-                    " от пользователя " + user
+            with tracer.start_as_current_span("db_insert_car"):
+                new_car = seller(
+                    name=data.get('name'),
+                    content=data.get('content'),
+                    price=data.get('price')
                 )
+                db.session.add(new_car)
 
-                # Обновляем количество машин в БД
-                CARS_IN_DB.set(seller.query.count())
-                
-                # Фиксируем время выполнения
-                API_LATENCY.labels(
-                    method='POST',
-                    endpoint='/seller'
-                ).observe(time.time() - start_time)
-                
-                return jsonify(new_car.to_dict()), 201
+            with tracer.start_as_current_span("db_commit"):
+                db.session.commit()
+
+            CARS_ADDED_TOTAL.inc()
+            CARS_ADDED_DETAILED.labels(car_model=data.get('name')).inc()
+            logger.info(
+                f"{datetime.now()} Машина создана от пользователя {user}"
+            )
+
+            CARS_IN_DB.set(seller.query.count())
+
+            API_LATENCY.labels(
+                method='POST',
+                endpoint='/seller'
+            ).observe(time.time() - start_time)
             
+            return jsonify(new_car.to_dict()), 201
+
         except Exception as e:
             logger.error(
-                str(datetime.now()) + " Не удалось создать машину" +
-                " от пользователя " + user
+                f"{datetime.now()} Не удалось создать машину от пользователя {user}"
             )
             return {"message": str(e)}, 500
 
@@ -84,17 +75,16 @@ def seller_controller_get_cars():
         try:
             with tracer.start_as_current_span("db_query_all_cars"):
                 cars = seller.query.all()
-                # Фиксируем время выполнения
-                API_LATENCY.labels(
-                    method='GET',
-                    endpoint='/seller'
-                ).observe(time.time() - start_time)
-                logger.info(
-                    str(datetime.now()) + 
-                    " Получены вся информация о машинах " +
-                    " от пользователя " + user
-                )
-                return jsonify([car.to_dict() for car in cars]), 200
+
+            API_LATENCY.labels(
+                method='GET',
+                endpoint='/seller'
+            ).observe(time.time() - start_time)
+
+            logger.info(
+                f"{datetime.now()} Получена информация о машинах от пользователя {user}"
+            )
+            return jsonify([car.to_dict() for car in cars]), 200
         except Exception as e:
             logger.error("Не удалось получить информацию о машинах")
             return {"message": str(e)}, 500
@@ -109,23 +99,21 @@ def seller_controller_get_car(car_id):
                 car = seller.query.get(car_id)
                 if not car:
                     logger.error(
-                        str(datetime.now()) +
-                        " Не удалось получить информацию о машине с id " +
-                        str(car_id) + " от пользователя " + user
+                        f"{datetime.now()} Не удалось получить информацию "
+                        f"о машине с id {car_id} от пользователя {user}"
                     )
                     return {"message": "Машина не найдена"}, 404
-                    
-                # Фиксируем время выполнения
-                API_LATENCY.labels(
-                    method='GET',
-                    endpoint='/seller/{id}'
-                ).observe(time.time() - start_time)
-                logger.info(
-                    str(datetime.now()) +
-                    " Найдена информация о машину с id " +
-                    str(car_id) + " от пользователя " + user
-                )
-                return jsonify(car.to_dict()), 200
+
+            API_LATENCY.labels(
+                method='GET',
+                endpoint='/seller/{id}'
+            ).observe(time.time() - start_time)
+
+            logger.info(
+                f"{datetime.now()} Найдена информация о машине с id {car_id} "
+                f"от пользователя {user}"
+            )
+            return jsonify(car.to_dict()), 200
         except Exception as e:
             return {"message": str(e)}, 500
 
@@ -138,41 +126,40 @@ def seller_controller_update_car(body, car_id):
             car = seller.query.get(car_id)
             if not car:
                 logger.error(
-                    str(datetime.now()) +
-                    " Не удалось обновить информацию о машине с id " +
-                    str(car_id) + " от пользователя " + user
+                    f"{datetime.now()} Не удалось обновить информацию "
+                    f"о машине с id {car_id} от пользователя {user}"
                 )
                 return {"message": "Машина не найдена"}, 404
 
-            if not connexion.request.is_json:
-                return {"message": "Неверный формат запроса"}, 400
-                
-            try:
-                with tracer.start_as_current_span("parse_json_body"):
-                    data = connexion.request.get_json()
-                with tracer.start_as_current_span("update_fields"):
-                    car.name = data.get('name', car.name)
-                    car.content = data.get('content', car.content)
-                    car.price = data.get('price', car.price)
-                with tracer.start_as_current_span("db_commit"):
-                    db.session.commit()
-                
-                # Увеличиваем счетчик обновлений
-                CARS_UPDATED.inc()
-                
-                # Фиксируем время выполнения
-                API_LATENCY.labels(
-                    method='PUT',
-                    endpoint='/seller/{id}'
-                ).observe(time.time() - start_time)
-                logger.info(
-                    str(datetime.now()) +
-                    " Обновлена информация о машине с id " +
-                    str(car_id) + " от пользователя " + user
-                )
-                return jsonify(car.to_dict()), 200
-            except Exception as e:
-                return {"message": str(e)}, 500
+        if not connexion.request.is_json:
+            return {"message": "Неверный формат запроса"}, 400
+
+        try:
+            with tracer.start_as_current_span("parse_json_body"):
+                data = connexion.request.get_json()
+
+            with tracer.start_as_current_span("update_fields"):
+                car.name = data.get('name', car.name)
+                car.content = data.get('content', car.content)
+                car.price = data.get('price', car.price)
+
+            with tracer.start_as_current_span("db_commit"):
+                db.session.commit()
+
+            CARS_UPDATED.inc()
+
+            API_LATENCY.labels(
+                method='PUT',
+                endpoint='/seller/{id}'
+            ).observe(time.time() - start_time)
+
+            logger.info(
+                f"{datetime.now()} Обновлена информация о машине с id {car_id} "
+                f"от пользователя {user}"
+            )
+            return jsonify(car.to_dict()), 200
+        except Exception as e:
+            return {"message": str(e)}, 500
 
 
 def seller_controller_delete_car(car_id):
@@ -183,33 +170,29 @@ def seller_controller_delete_car(car_id):
             car = seller.query.get(car_id)
             if not car:
                 logger.error(
-                    str(datetime.now()) +
-                    " Не удалось удалить информацию о машине с id " +
-                    str(car_id) + " от пользователя " + user
+                    f"{datetime.now()} Не удалось удалить информацию "
+                    f"о машине с id {car_id} от пользователя {user}"
                 )
                 return {"message": "Машина не найдена"}, 404
-            
+
         try:
             with tracer.start_as_current_span("db_delete_car"):
                 db.session.delete(car)
+            
             with tracer.start_as_current_span("db_commit"):
                 db.session.commit()
-            
-            # Увеличиваем счетчик удалений
+
             CARS_DELETED.inc()
-            
-            # Обновляем количество машин в БД
             CARS_IN_DB.set(seller.query.count())
-            
-            # Фиксируем время выполнения
+
             API_LATENCY.labels(
                 method='DELETE',
                 endpoint='/seller/{id}'
             ).observe(time.time() - start_time)
+
             logger.info(
-                str(datetime.now()) +
-                " Удалена информация о машине с id " +
-                str(car_id) + " от пользователя " + user
+                f"{datetime.now()} Удалена информация о машине с id {car_id} "
+                f"от пользователя {user}"
             )
             return {"message": "Машина удалена"}, 200
         except Exception as e:
