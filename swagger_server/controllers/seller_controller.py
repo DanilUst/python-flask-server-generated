@@ -58,12 +58,12 @@ def seller_controller_create_car(body):  # noqa: E501
                 method='POST',
                 endpoint='/seller'
             ).observe(time.time() - start_time)
-            
+
             return jsonify(new_car.to_dict()), 201
 
         except Exception as e:
             logger.error(
-                f"{datetime.now()} Не удалось создать машину от пользователя {user}"
+                f"{datetime.now()} Не удалось создать машину от польз {user}"
             )
             return {"message": str(e)}, 500
 
@@ -82,7 +82,7 @@ def seller_controller_get_cars():
             ).observe(time.time() - start_time)
 
             logger.info(
-                f"{datetime.now()} Получена информация о машинах от пользователя {user}"
+                f"{datetime.now()} Получена информация о машинах от польз {user}"
             )
             return jsonify([car.to_dict() for car in cars]), 200
         except Exception as e:
@@ -154,7 +154,7 @@ def seller_controller_update_car(body, car_id):
             ).observe(time.time() - start_time)
 
             logger.info(
-                f"{datetime.now()} Обновлена информация о машине с id {car_id} "
+                f"{datetime.now()} Обновлена инф-я о машине с id {car_id} "
                 f"от пользователя {user}"
             )
             return jsonify(car.to_dict()), 200
@@ -178,7 +178,7 @@ def seller_controller_delete_car(car_id):
         try:
             with tracer.start_as_current_span("db_delete_car"):
                 db.session.delete(car)
-            
+
             with tracer.start_as_current_span("db_commit"):
                 db.session.commit()
 
@@ -197,4 +197,3 @@ def seller_controller_delete_car(car_id):
             return {"message": "Машина удалена"}, 200
         except Exception as e:
             return {"message": str(e)}, 500
-        
