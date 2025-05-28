@@ -79,8 +79,9 @@ def main():
     )
     
     # Конфигурация базы данных
-    app.app.config['SQLALCHEMY_DATABASE_URI'] = \
+    app.app.config['SQLALCHEMY_DATABASE_URI'] = (
         'sqlite:////usr/src/app/seller.db'
+    )
     app.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app.app)
     
