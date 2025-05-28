@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 
 import connexion
+import logging
+import os
+from logging.handlers import RotatingFileHandler
+
 from prometheus_client import make_wsgi_app
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+
 from swagger_server import encoder
 from swagger_server.database import db
-from werkzeug.middleware.dispatcher import DispatcherMiddleware
-import logging
-from logging.handlers import RotatingFileHandler
 from swagger_server.logger import logger
 from swagger_server.tracer import configure_tracing
-import os
+
 
 def setup_logging(app):
-    """Настройка логирования с ротацией и структурным форматом"""
+    """Настройка логирования с ротацией и структурным форматом."""
     # Создаем директорию для логов, если её нет
     log_dir = '/var/log/flask-api'
     os.makedirs(log_dir, exist_ok=True)
@@ -48,6 +51,7 @@ def setup_logging(app):
     werkzeug_logger.addHandler(file_handler)
     werkzeug_logger.addHandler(console_handler)
 
+
 def main():
     # Инициализация Connexion приложения
     app = connexion.App(__name__, specification_dir='./swagger/')
@@ -62,15 +66,21 @@ def main():
         app.app.json_encoder = encoder.JSONEncoder
     
     # Добавление Swagger API
-    app.add_api('swagger.yaml', arguments={'title': 'Cars Seller'}, pythonic_params=True)
+    app.add_api(
+        'swagger.yaml',
+        arguments={'title': 'Cars Seller'},
+        pythonic_params=True
+    )
     
     # Настройка Prometheus метрик
-    app.app.wsgi_app = DispatcherMiddleware(app.app.wsgi_app, {
-        '/metrics': make_wsgi_app()
-    })
+    app.app.wsgi_app = DispatcherMiddleware(
+        app.app.wsgi_app,
+        {'/metrics': make_wsgi_app()}
+    )
     
     # Конфигурация базы данных
-    app.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////usr/src/app/seller.db'
+    app.app.config['SQLALCHEMY_DATABASE_URI'] = \
+        'sqlite:////usr/src/app/seller.db'
     app.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app.app)
     
@@ -79,10 +89,11 @@ def main():
         db.create_all()
     
     # Стартовая запись в лог
-    logger.info("Serber started")
+    logger.info("Server started")
     configure_tracing(app)
     # Запуск приложения
     app.run(host='0.0.0.0', port=8080)
+
 
 if __name__ == '__main__':
     main()
