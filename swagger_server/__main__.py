@@ -22,7 +22,7 @@ def setup_logging(app):
 
     # Формат логов (структурированный JSON)
     formatter = logging.Formatter(
-        '{"time": "%(asctime)s", "level": "%(levelname)s", ' \
+        '{"time": "%(asctime)s", "level": "%(levelname)s", '
         '"module": "%(module)s", '
         '"message": "%(message)s", "endpoint": "%(pathname)s:%(lineno)d"}'
     )
@@ -64,31 +64,31 @@ def main():
         app.app.json_provider_class = encoder.JSONEncoder
     else:
         app.app.json_encoder = encoder.JSONEncoder
-    
+
     # Добавление Swagger API
     app.add_api(
         'swagger.yaml',
         arguments={'title': 'Cars Seller'},
         pythonic_params=True
     )
-    
+
     # Настройка Prometheus метрик
     app.app.wsgi_app = DispatcherMiddleware(
         app.app.wsgi_app,
         {'/metrics': make_wsgi_app()}
     )
-    
+
     # Конфигурация базы данных
     app.app.config['SQLALCHEMY_DATABASE_URI'] = (
         'sqlite:////usr/src/app/seller.db'
     )
     app.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app.app)
-    
+
     # Создание таблиц
     with app.app.app_context():
         db.create_all()
-    
+
     # Стартовая запись в лог
     logger.info("Server started")
     configure_tracing(app)
