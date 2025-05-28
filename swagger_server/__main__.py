@@ -22,7 +22,8 @@ def setup_logging(app):
 
     # Формат логов (структурированный JSON)
     formatter = logging.Formatter(
-        '{"time": "%(asctime)s", "level": "%(levelname)s", "module": "%(module)s", '
+        '{"time": "%(asctime)s", "level": "%(levelname)s", ' \
+        '"module": "%(module)s", '
         '"message": "%(message)s", "endpoint": "%(pathname)s:%(lineno)d"}'
     )
 
@@ -53,12 +54,11 @@ def setup_logging(app):
 
 
 def main():
-    # Инициализация Connexion приложения
     app = connexion.App(__name__, specification_dir='./swagger/')
-    
+
     # Настройка логирования
     # setup_logging(app)
-    
+
     # Совместимость с Flask 2.3+
     if hasattr(app.app, 'json_provider_class'):
         app.app.json_provider_class = encoder.JSONEncoder
